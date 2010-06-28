@@ -40,9 +40,9 @@ class ThinkingSphinx::Context
   private
   
   def add_indexed_models
-    ActiveRecord::Base.subclasses.each do |klass|
-      add_indexed_model klass if klass.has_sphinx_indexes?
-    end
+    ActiveRecord::Base.descendants.
+      select(&:has_sphinx_indexes?).
+      each { |klass| add_indexed_model klass }
   end
   
   # Make sure all models are loaded - without reloading any that
@@ -52,22 +52,7 @@ class ThinkingSphinx::Context
   def load_models
     ThinkingSphinx::Configuration.instance.model_directories.each do |base|
       Dir["#{base}**/*.rb"].each do |file|
-        model_name = file.gsub(/^#{base}([\w_\/\\]+)\.rb/, '\1')
-        
-        next if model_name.nil?
-        next if ::ActiveRecord::Base.send(:subclasses).detect { |model|
-          model.name == model_name.camelize
-        }
-        
-        begin
-          model_name.camelize.constantize
-        rescue LoadError
-          model_name.gsub!(/.*[\/\\]/, '').nil? ? next : retry
-        rescue NameError
-          next
-        rescue StandardError
-          STDERR.puts "Warning: Error loading #{file}"
-        end
+        require file.sub(/^#{base}/, '')
       end
     end
   end
