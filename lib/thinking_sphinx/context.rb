@@ -52,7 +52,7 @@ class ThinkingSphinx::Context
   def load_models
     ThinkingSphinx::Configuration.instance.model_directories.each do |base|
       Dir["#{base}**/*.rb"].each do |file|
-        require file.sub(/^#{base}/, '')
+        require_dependency file.sub(/^#{base}/, '')
       end
     end
   end
